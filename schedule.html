@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Callix — Schedule Meeting</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --panel-2: #1c202a;
+    --border: #262a34;
+    --text: #f2f3f5;
+    --muted: #9aa1ac;
+    --accent: #5b6cff;
+    --accent-hover: #4756e0;
+    --danger: #ff5c6c;
+    --success: #35c17e;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #0f1115;
+    color: var(--text);
+    min-height: 100vh;
+  }
+  .topbar {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 28px; border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; background: rgba(15,17,21,0.9); backdrop-filter: blur(8px);
+  }
+  .back-link {
+    color: var(--muted); text-decoration: none; font-size: 14px;
+    display: flex; align-items: center; gap: 6px; cursor: pointer;
+  }
+  .back-link:hover { color: var(--text); }
+  .logo { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .logo-mark {
+    width: 28px; height: 28px; border-radius: 7px;
+    background: linear-gradient(135deg, var(--accent), #8b5cf6);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px;
+  }
+  .logo-text { font-size: 15px; font-weight: 700; }
+
+  .container { max-width: 640px; margin: 0 auto; padding: 32px 24px 80px; }
+  h1 { font-size: 22px; margin: 0 0 4px; letter-spacing: -0.02em; }
+  .page-sub { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+
+  .message {
+    font-size: 13px; padding: 10px 12px; border-radius: 8px; margin-bottom: 18px; display: none;
+  }
+  .message.error { background: rgba(255,92,108,0.12); color: var(--danger); border: 1px solid rgba(255,92,108,0.3); display: block; }
+  .message.success { background: rgba(53,193,126,0.12); color: var(--success); border: 1px solid rgba(53,193,126,0.3); display: block; }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px;
+  }
+  .card + .card { margin-top: 16px; }
+  .card-title {
+    font-size: 13px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--muted); margin-bottom: 16px;
+  }
+
+  .field { margin-bottom: 16px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .field input, .field select, .field textarea {
+    width: 100%; padding: 10px 12px; background: #10131a;
+    border: 1px solid var(--border); border-radius: 9px; color: var(--text);
+    font-size: 14px; outline: none; font-family: inherit;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
+  .field textarea { resize: vertical; min-height: 70px; }
+
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-info { flex: 1; padding-right: 16px; }
+  .toggle-title { font-size: 14px; font-weight: 500; }
+  .toggle-desc { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+
+  .switch { position: relative; width: 42px; height: 24px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute; cursor: pointer; inset: 0;
+    background: #2a2f3a; border-radius: 24px; transition: 0.2s;
+  }
+  .slider::before {
+    content: ""; position: absolute; height: 18px; width: 18px;
+    left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.2s;
+  }
+  input:checked + .slider { background: var(--accent); }
+  input:checked + .slider::before { transform: translateX(18px); }
+
+  .submit-bar {
+    display: flex; gap: 10px; margin-top: 20px;
+  }
+  .btn {
+    padding: 12px 20px; border-radius: 10px; border: none;
+    font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s, opacity 0.15s;
+  }
+  .btn-primary { background: var(--accent); color: white; flex: 1; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-ghost:hover { background: var(--panel-2); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="back-link" href="dashboard.html">← Back to Dashboard</a>
+  <div class="logo">
+    <div class="logo-mark">C</div>
+    <div class="logo-text">Callix</div>
+  </div>
+</div>
+
+<div class="container">
+  <h1>Schedule a meeting</h1>
+  <p class="page-sub">Set up a meeting and share it with your team.</p>
+
+  <div id="message" class="message"></div>
+
+  <form id="schedule-form">
+
+    <div class="card">
+      <div class="card-title">Details</div>
+      <div class="field">
+        <label for="title">Meeting title</label>
+        <input type="text" id="title" required placeholder="e.g. Weekly Team Sync" />
+      </div>
+      <div class="field">
+        <label for="description">Description</label>
+        <textarea id="description" placeholder="What's this meeting about?"></textarea>
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label for="date">Date</label>
+          <input type="date" id="date" required />
+        </div>
+        <div class="field">
+          <label for="time">Time</label>
+          <input type="time" id="time" required />
+        </div>
+      </div>
+      <div class="field">
+        <label for="timezone">Time zone</label>
+        <select id="timezone"></select>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Recurrence & Security</div>
+      <div class="field">
+        <label for="recurrence">Repeat</label>
+        <select id="recurrence">
+          <option value="none">Does not repeat</option>
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="biweekly">Every 2 weeks</option>
+          <option value="monthly">Monthly</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="password">Meeting password (optional)</label>
+        <input type="text" id="password" placeholder="Leave blank for no password" />
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-title">Waiting room</div>
+          <div class="toggle-desc">Host must admit each participant</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="waitingRoom" checked />
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Meeting options</div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-title">Host video</div>
+          <div class="toggle-desc">Turn on host's camera when joining</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="hostVideo" checked />
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-title">Participant video</div>
+          <div class="toggle-desc">Turn on participants' cameras when joining</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="participantVideo" />
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-title">Mute on entry</div>
+          <div class="toggle-desc">Automatically mute participants as they join</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="muteOnEntry" checked />
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-title">Enable chat</div>
+          <div class="toggle-desc">Allow in-meeting text chat</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="enableChat" checked />
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-title">Enable screen share</div>
+          <div class="toggle-desc">Allow participants to share their screen</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="enableScreenShare" checked />
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-title">Enable recording</div>
+          <div class="toggle-desc">Allow this meeting to be recorded</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="enableRecording" />
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Invite participants</div>
+      <div class="field">
+        <label for="invitees">Email addresses</label>
+        <input type="text" id="invitees" placeholder="jane@example.com, mark@example.com" />
+      </div>
+    </div>
+
+    <div class="submit-bar">
+      <button type="button" class="btn btn-ghost" onclick="window.location.href='dashboard.html'">Cancel</button>
+      <button type="submit" class="btn btn-primary" id="submit-btn">Schedule Meeting</button>
+    </div>
+  </form>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, collection, addDoc, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB2RZlRNlTONf4xuxjPMcZgedc9wbIhj-4",
+    authDomain: "axid-ai.firebaseapp.com",
+    projectId: "axid-ai",
+    storageBucket: "axid-ai.firebasestorage.app",
+    messagingSenderId: "354519561790",
+    appId: "1:354519561790:web:e2b25803bcd713aea4836f",
+    measurementId: "G-RBDLQZ6BZB"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let currentUser = null;
+
+  onAuthStateChanged(auth, (user) => {
+    if (!user) {
+      window.location.href = "index.html";
+      return;
+    }
+    currentUser = user;
+  });
+
+  // Populate timezone select with common zones, defaulting to the browser's
+  const tzSelect = document.getElementById("timezone");
+  const commonZones = [
+    "Pacific/Honolulu","America/Anchorage","America/Los_Angeles","America/Denver",
+    "America/Chicago","America/New_York","America/Sao_Paulo","UTC",
+    "Europe/London","Europe/Paris","Europe/Berlin","Europe/Moscow",
+    "Asia/Dubai","Asia/Kolkata","Asia/Bangkok","Asia/Shanghai","Asia/Tokyo",
+    "Australia/Sydney","Pacific/Auckland"
+  ];
+  const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  if (!commonZones.includes(browserTz)) commonZones.unshift(browserTz);
+  commonZones.forEach(tz => {
+    const opt = document.createElement("option");
+    opt.value = tz;
+    opt.textContent = tz.replace(/_/g, " ");
+    if (tz === browserTz) opt.selected = true;
+    tzSelect.appendChild(opt);
+  });
+
+  // Default date/time to now + 1 hour, rounded to nearest 30 min
+  const now = new Date(Date.now() + 60 * 60 * 1000);
+  now.setMinutes(Math.ceil(now.getMinutes() / 30) * 30, 0, 0);
+  document.getElementById("date").value = now.toISOString().slice(0, 10);
+  document.getElementById("time").value = now.toTimeString().slice(0, 5);
+
+  function showMessage(text, type) {
+    const box = document.getElementById("message");
+    box.textContent = text;
+    box.className = "message " + type;
+  }
+
+  function generateMeetingCode() {
+    const chars = "abcdefghijkmnopqrstuvwxyz23456789";
+    const part = () => Array.from({length: 3}, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+    return `${part()}-${part()}-${part()}`;
+  }
+
+  document.getElementById("schedule-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!currentUser) return;
+
+    const btn = document.getElementById("submit-btn");
+    btn.disabled = true;
+    btn.textContent = "Scheduling…";
+
+    try {
+      const title = document.getElementById("title").value.trim();
+      const description = document.getElementById("description").value.trim();
+      const date = document.getElementById("date").value;
+      const time = document.getElementById("time").value;
+      const timezone = document.getElementById("timezone").value;
+      const recurrence = document.getElementById("recurrence").value;
+      const password = document.getElementById("password").value.trim();
+      const invitees = document.getElementById("invitees").value
+        .split(",").map(s => s.trim()).filter(Boolean);
+
+      const startTime = new Date(`${date}T${time}:00`);
+      const code = generateMeetingCode();
+
+      await addDoc(collection(db, "meetings"), {
+        hostId: currentUser.uid,
+        hostEmail: currentUser.email,
+        title: title || "Untitled Meeting",
+        description,
+        code,
+        startTime: Timestamp.fromDate(startTime),
+        timezone,
+        recurrence,
+        password: password || null,
+        waitingRoom: document.getElementById("waitingRoom").checked,
+        hostVideo: document.getElementById("hostVideo").checked,
+        participantVideo: document.getElementById("participantVideo").checked,
+        muteOnEntry: document.getElementById("muteOnEntry").checked,
+        enableChat: document.getElementById("enableChat").checked,
+        enableScreenShare: document.getElementById("enableScreenShare").checked,
+        enableRecording: document.getElementById("enableRecording").checked,
+        invitees,
+        type: "scheduled",
+        createdAt: serverTimestamp()
+      });
+
+      showMessage("Meeting scheduled! Redirecting to your dashboard…", "success");
+      setTimeout(() => { window.location.href = "dashboard.html"; }, 1200);
+
+    } catch (err) {
+      console.error(err);
+      showMessage(err.message || "Couldn't schedule the meeting. Try again.", "error");
+      btn.disabled = false;
+      btn.textContent = "Schedule Meeting";
+    }
+  });
+</script>
+
+</body>
+</html>
